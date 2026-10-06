@@ -1,326 +1,208 @@
-# Cube Buildathon · 04 · Returns Manager
+# RETURNIQ — Creative React/Vite + Flask Return Intelligence
 
-**Round 2 · Individual Build**
+RETURNIQ is an AI-assisted returns inspection workspace. This version keeps the existing React/Vite workflow, adds a production-shaped Flask API, persistent inspection-image storage, catalog-vs-return visual matching, optional Gemini vision analysis, and a more cinematic command-center theme.
 
-> Five agents, one unit, one record that follows it.
-> A physical product arrives, gets prepped, gets shipped, comes back. At every step a fast operational judgment has to be made and recorded.
-
-**New here? Read these first:**
-
-1. [`GITHUB-GUIDE.md`](GITHUB-GUIDE.md) explains how to fork the repository, set it up, build and push your work.
-2. [`RULES.md`](RULES.md) covers the repository and engineering rules.
-
----
-
-## Your problem statement: Returns Manager
-
-|                              |                                       |
-| ---------------------------- | ------------------------------------- |
-| **Position in the chain**    | Step 4 of 5 · Customer return         |
-| **Customer**                 | Seller, or prep center acting for one |
-| **What gets recorded**       | Condition and disposition             |
-| **Who consumes your output** | Recovery Manager                      |
-
-Someone opens a returned parcel. In a few seconds they need to decide:
-
-* Is this the item we sold?
-* Is it complete?
-* What condition is it in?
-* What should happen to it next?
-
-Your agent should make that process structured, consistent and evidence-backed.
-
-### What the agent returns
-
-From appropriate visual/input evidence, the Returns Manager should determine:
-
-* **Identity** against the seller's own catalogue. Is this the ASIN/SKU that was ordered?
-* **Completeness** against the expected parts list: accessories, manuals, cables and other required components.
-* **Condition** using the published condition scale. Do not invent your own condition scale.
-* **Disposition**, such as `restock`, `refurbish`, `liquidate`, `dispose` or `pending_review`.
-
-> Moving even a few percent of returns from liquidation to restock is direct margin. That is the commercial case in one sentence.
-
----
-
-## The chain you are part of
+## Project structure
 
 ```text
- Supplier delivery      Inbound to Amazon     Outbound to buyer     Customer return        Money back
- ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
- │ 01 Receiving │ ───▶ │ 02 Prep      │ ───▶ │ 03 Pack      │ ───▶ │ 04 Returns   │ ───▶ │ 05 Recovery  │
- │ condition on │      │ compliance   │      │ contents at  │      │ condition &  │      │ reads all    │
- │ arrival      │      │ proof        │      │ seal         │      │ disposition  │      │ four → claim │
- └──────────────┘      └──────────────┘      └──────────────┘      └──────────────┘      └──────────────┘
+ProjectManagement/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── data/
+│   │   ├── services/
+│   │   ├── assets/images/
+│   │   ├── index.css
+│   │   ├── style.css
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── backend/
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── storage/inspection-images/
+└── README.md
 ```
 
-The first four Managers generate operational evidence. Recovery Manager consumes those records downstream.
+## Frontend — npm
 
-Your output should therefore be structured, traceable and usable by the next stage.
+Requires Node.js 20+.
 
----
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Reference data
+Useful commands:
 
-`data/` contains **synthetic** reference data for development and testing. See [`data/README.md`](data/README.md) for the field definitions.
+```bash
+npm run dev
+npm run lint
+npm run build
+npm run preview
+```
 
-The SKUs, ASINs, FNSKUs, orders, suppliers, operators and amounts are invented. Requirement flags and fee amounts are **not** authoritative Amazon rules or fees.
+Vite runs on `http://localhost:3003` and proxies `/api/*` to Flask on port `3000`.
 
-The `photo_refs` values are placeholders, and images are not included with this repository. Create or use appropriate fixtures for development and evaluation.
+## Backend — Flask
 
-All five Buildathon repositories share the same conceptual `unit_id` values, allowing a unit to be followed through the operational chain.
+Requires Python 3.10+.
 
----
+```bash
+cd backend
+python -m venv venv
+```
 
-## How to build
+Windows:
 
-This is an **individual Round 2 build**.
+```bash
+venv\Scripts\activate
+```
 
-### Your workflow
+macOS/Linux:
+
+```bash
+source venv/bin/activate
+```
+
+Install:
+
+```bash
+pip install -r requirements.txt
+```
+
+Optional Gemini configuration:
+
+```bash
+cp .env.example .env
+```
+
+Set:
+
+```env
+GEMINI_API_KEY=your_real_key_here
+GEMINI_MODEL=gemini-2.5-flash
+PORT=3000
+```
+
+Run:
+
+```bash
+python app.py
+```
+
+Health check:
 
 ```text
-Fork
-  ↓
-Clone
-  ↓
-Understand the problem
-  ↓
-Build
-  ↓
-Test
-  ↓
-Evaluate
-  ↓
-Document
-  ↓
-Deploy / Demo
-  ↓
-Submit
+http://localhost:3000/api/health
 ```
 
-Build your solution in **your own fork** of this repository.
+## Return-image matching and storage
 
-You do not need to create a participant folder in the organiser repository or open a pull request into the organiser repository.
+The inspection flow now sends the original catalog product image as the visual baseline together with every uploaded return image.
 
----
+The Flask backend:
 
-## What you should focus on
+1. receives the return images;
+2. saves normalized JPEG copies under `backend/storage/inspection-images/`;
+3. exposes saved images through `/api/images/<filename>`;
+4. computes a local perceptual similarity signal against the original catalog image;
+5. optionally sends the catalog image + return images to Gemini when `GEMINI_API_KEY` is configured;
+6. combines the visual result with the existing frontend decision engine;
+7. returns structured identity, condition, completeness, integrity, and evidence information.
 
-Your Returns Manager should be able to:
+Important: image similarity is an inspection signal, not proof that a product is authentic. Serial numbers, barcodes, hidden components, and final fraud decisions should still use the existing evidence/manual-review workflow.
+
+## API
+
+### `GET /api/health`
+
+Returns backend status and whether Gemini is configured.
+
+### `POST /api/inspect`
+
+JSON body:
+
+```json
+{
+  "returnId": "RET-88410",
+  "order": {
+    "orderId": "ORD-10984",
+    "productName": "Apple iPhone 15 Pro Max (256GB)",
+    "brand": "Apple",
+    "model": "A2849",
+    "sku": "APPL-IPH15PM-256-NT",
+    "serialNumber": "SERIAL",
+    "expectedComponents": [],
+    "expectedImageData": "data:image/jpeg;base64,..."
+  },
+  "images": [
+    {
+      "id": "img-1",
+      "category": "FRONT",
+      "name": "front.jpg",
+      "data": "data:image/jpeg;base64,..."
+    }
+  ]
+}
+```
+
+Response includes:
+
+- `analysis`
+- `visualMatch`
+- `storedImages`
+- `inspectionId`
+- `processingTimeMs`
+- analysis source
+
+### `GET /api/inspections`
+
+Returns recently saved inspection-image references.
+
+## Visual design upgrades
+
+The UI now includes:
+
+- animated ambient AI/warehouse grid background;
+- floating light-orb graphics;
+- subtle scanline effect;
+- glass-style operational panels;
+- improved motion and hover depth;
+- reduced-motion accessibility fallback;
+- a dedicated `src/style.css` theme layer while preserving Tailwind;
+- local imported demo product images so Vite builds can resolve assets correctly.
+
+## Architecture
 
 ```text
-Input / Return Evidence
-        ↓
-     Identity
-        ↓
-   Completeness
-        ↓
-     Condition
-        ↓
-    Disposition
-        ↓
-Structured Evidence Record
+React + TypeScript + Vite
+        |
+        | /api/inspect
+        v
+Flask REST API
+        |
+        +--> persistent inspection image storage
+        |
+        +--> local perceptual image matching
+        |
+        +--> optional Gemini Vision
+        |
+        +--> structured inspection result
+        |
+        v
+Existing deterministic decision engine
+        |
+        v
+Dashboard / Analytics / Manual Review / Certificate
 ```
 
-The exact internal architecture is up to you.
+## Security
 
-Focus on making the core workflow work reliably before adding unnecessary features.
+Keep API keys only in `backend/.env`. Never put `GEMINI_API_KEY` in frontend code.
 
-A worked Returns example may be available in the repository resources. **Read it to understand the expected standard. Do not simply copy it.**
-
----
-
-## Evidence & Decision Traceability
-
-Your agent should produce structured evidence for its decisions.
-
-The official evidence contract includes concepts such as:
-
-* `record_id`
-* `schema_version`
-* `organization_id`
-* `client_id`
-* `agent`
-* `subject`
-* `captured_at`
-* `operator_label`
-* `images`
-* `checks`
-* `outcome`
-* `overrides`
-* `status`
-
-Each check should make the result understandable through its verdict, confidence and supporting detail where applicable.
-
-Use:
-
-* **PASS** when the evidence supports the condition.
-* **FAIL** when the evidence supports that the condition is not met.
-* **UNCERTAIN** when the evidence is insufficient for a reliable judgment.
-
-`UNCERTAIN` is a valid outcome. Do not force ambiguous cases into PASS or FAIL.
-
----
-
-## Cross-Manager Compatibility
-
-Round 2 is individual, but your output will eventually be consumed by Recovery Manager.
-
-Use the **official evidence contract provided by the organisers** as the baseline for interoperability.
-
-Do not create a separate negotiated cross-pod contract for Round 2.
-
-Your decision should allow another system to understand:
-
-```text
-What was returned?
-      ↓
-What was checked?
-      ↓
-What did the agent decide?
-      ↓
-Why?
-      ↓
-What evidence supports it?
-```
-
----
-
-## Engineering expectations
-
-Keep the system practical and reliable.
-
-### Tenancy isolation
-
-If you store persistent data, organisation/client data should remain properly isolated.
-
-### Efficient model usage
-
-Avoid unnecessary repeated model calls. Batch related reasoning where appropriate.
-
-### Fail open
-
-If a model or dependency fails, do not silently discard the input. Preserve the available information and move the case into an appropriate pending/review state.
-
-### Authoritative rules
-
-Where an external rule or requirement is needed, use the authoritative source rather than relying on model memory or synthetic sample values.
-
----
-
-## Evaluation
-
-Evaluation is part of your Round 2 score.
-
-For the visual checks, build an appropriate unseen/held-out evaluation set. Where applicable, use at least **50 unseen units** and have two humans independently label the cases before comparing agent performance.
-
-Report:
-
-* results per important check,
-* false positives,
-* false negatives,
-* `UNCERTAIN` / review rate,
-* important failure modes,
-* latency/cost where relevant.
-
-Do not evaluate only on examples that make the system look successful.
-
-For condition and other visual checks, use genuinely varied cases, including difficult or ambiguous examples.
-
----
-
-## Round 2 evaluation — 100 points
-
-| Criterion                                    |  Points |
-| -------------------------------------------- | ------: |
-| Problem Understanding & Solution Relevance   |  **15** |
-| Agent Functionality & Decision Quality       |  **25** |
-| Evaluation, Accuracy & Uncertainty Handling  |  **25** |
-| Evidence, Traceability & Engineering Quality |  **20** |
-| UX, Demo & Documentation                     |  **15** |
-| **TOTAL**                                    | **100** |
-
-Your Round 2 score is important because participants selected for Round 3 will carry their Round 2 score into the final combined result.
-
----
-
-## Submission
-
-### Submissions open
-
-**27 September 2026**
-
-### Final deadline
-
-**1 October 2026 · 6:00 PM IST**
-
-The submission form closes permanently at the deadline.
-
-**There is no reopening and no resubmission.**
-
-Your final submission should include:
-
-* your GitHub fork,
-* working implementation,
-* `README.md`,
-* `ARCHITECTURE.md`,
-* evaluation results,
-* demo video,
-* deployment URL where applicable,
-* required submission links.
-
-### LinkedIn — Mandatory
-
-You must publish a LinkedIn post about your Round 2 build.
-
-The post must:
-
-* mention your Returns Manager build,
-* explain what you built,
-* tag **CodeQuesters**,
-* tag **Sydon.AI**.
-
-Include the LinkedIn post URL in the submission form.
-
-The organisers will share the official LinkedIn post template separately.
-
----
-
-## Commit rule
-
-All code commits forming your Round 2 submission must be made during the authorised build phase.
-
-Once the build phase ends, do not continue making Round 2 code changes.
-
----
-
-## Final checklist
-
-```text
-[ ] Returns Manager implementation works
-[ ] Working in my own fork
-[ ] README.md complete
-[ ] ARCHITECTURE.md complete
-[ ] Identity tested
-[ ] Completeness tested
-[ ] Condition tested
-[ ] Disposition tested
-[ ] UNCERTAIN / review handling tested
-[ ] Evidence trace implemented
-[ ] Evaluation completed
-[ ] Failure modes documented
-[ ] Demo ready
-[ ] LinkedIn post published
-[ ] CodeQuesters tagged
-[ ] Sydon.AI tagged
-[ ] Submission links verified
-[ ] Final submission ready before 1 October · 6:00 PM IST
-```
-
-> **Build → Test → Measure → Document → Publish → Submit**
-
----
-
-**Cube Buildathon · 04 · Returns Manager**
-
-**Round 2 · Individual Build**
+For production, replace the local filesystem storage with object storage (S3/GCS/Azure Blob), add authentication, database-backed inspection records, rate limiting, and virus/content validation for uploaded files.
