@@ -141,7 +141,13 @@ export default function App() {
   const flaggedOrders = orders.filter((o) => o.scenarioType === 'BOX_SWAP' || o.scenarioType === 'SERIAL_MISMATCH');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
+    <div className="returniq-shell min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
+      <div className="ambient-grid" aria-hidden="true">
+        <div className="ambient-orb orb-one" />
+        <div className="ambient-orb orb-two" />
+        <div className="ambient-orb orb-three" />
+        <div className="scanline" />
+      </div>
       {/* 3-Zone Top Navigation Bar */}
       <Header
         currentTab={currentTab}

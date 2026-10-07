@@ -26,6 +26,52 @@ export const ReturnsView: React.FC<ReturnsViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [dispositionFilter, setDispositionFilter] = useState<string>('ALL');
   const [identityFilter, setIdentityFilter] = useState<string>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+
+  // Broad customer-facing return categories. The filter is additive only: it
+  // does not change the existing product records or any inspection behaviour.
+  const categoryOptions = [
+    'Electronics',
+    'Mobile & Tablets',
+    'Computers & Laptops',
+    'Audio',
+    'Gaming',
+    'Wearables',
+    'Home & Kitchen',
+    'Clothing & Fashion',
+    'Footwear',
+    'Toys & Games',
+    'Beauty & Personal Care',
+    'Sports & Fitness',
+    'Books & Stationery',
+    'Automotive',
+    'Accessories',
+    'Other',
+  ];
+
+  // Maps the project's existing categories into the new shopping-style
+  // categories. Unknown/future categories remain filterable under Other.
+  const getBroadCategory = (category: string) => {
+    const value = category.toLowerCase();
+    if (['smartphones', 'audio', 'electronics', 'computers', 'laptops', 'tablets'].some((x) => value.includes(x))) {
+      if (value.includes('smartphone') || value.includes('tablet')) return 'Mobile & Tablets';
+      if (value.includes('computer') || value.includes('laptop')) return 'Computers & Laptops';
+      if (value.includes('audio')) return 'Audio';
+      return 'Electronics';
+    }
+    if (value.includes('gaming') || value.includes('console') || value.includes('playstation') || value.includes('xbox')) return 'Gaming';
+    if (value.includes('watch') || value.includes('wearable')) return 'Wearables';
+    if (value.includes('appliance') || value.includes('kitchen') || value.includes('home')) return 'Home & Kitchen';
+    if (value.includes('cloth') || value.includes('fashion') || value.includes('apparel')) return 'Clothing & Fashion';
+    if (value.includes('shoe') || value.includes('footwear') || value.includes('sneaker')) return 'Footwear';
+    if (value.includes('toy') || value.includes('game')) return 'Toys & Games';
+    if (value.includes('beauty') || value.includes('cosmetic') || value.includes('personal care')) return 'Beauty & Personal Care';
+    if (value.includes('sport') || value.includes('fitness')) return 'Sports & Fitness';
+    if (value.includes('book') || value.includes('stationery')) return 'Books & Stationery';
+    if (value.includes('auto') || value.includes('car') || value.includes('vehicle')) return 'Automotive';
+    if (value.includes('accessor')) return 'Accessories';
+    return 'Other';
+  };
 
   const filteredInspections = inspections.filter((insp) => {
     const matchesSearch =
@@ -41,7 +87,10 @@ export const ReturnsView: React.FC<ReturnsViewProps> = ({
     const matchesIdentity =
       identityFilter === 'ALL' || insp.aiAnalysis.identity.status === identityFilter;
 
-    return matchesSearch && matchesDisposition && matchesIdentity;
+    const matchesCategory =
+      categoryFilter === 'ALL' || getBroadCategory(insp.product.category) === categoryFilter;
+
+    return matchesSearch && matchesDisposition && matchesIdentity && matchesCategory;
   });
 
   return (
@@ -109,6 +158,23 @@ export const ReturnsView: React.FC<ReturnsViewProps> = ({
               <option value="MATCH">Product Match</option>
               <option value="POTENTIAL_MISMATCH">Potential Mismatch</option>
               <option value="UNVERIFIED">Unverified</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">Category:</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-white text-xs min-w-[150px]"
+              aria-label="Filter returns by product category"
+            >
+              <option value="ALL">All Categories</option>
+              {categoryOptions.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </div>
         </div>

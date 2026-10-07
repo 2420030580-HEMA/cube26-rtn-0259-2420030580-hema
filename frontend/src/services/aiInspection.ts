@@ -29,6 +29,23 @@ export const INSPECTION_STAGES = [
   'Executing business decision engine & disposition rules',
 ];
 
+async function toDataUrl(url: string): Promise<string | undefined> {
+  if (!url) return undefined;
+  if (url.startsWith('data:')) return url;
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(undefined);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 export async function runAIInspection(
   order: OrderRecord,
   images: InspectionImage[],
@@ -54,6 +71,7 @@ export async function runAIInspection(
   let rawAiResult: any = null;
 
   try {
+    const expectedImageData = await toDataUrl(order.product.imageUrl);
     const payload = {
       order: {
         orderId: order.orderId,
@@ -65,6 +83,8 @@ export async function runAIInspection(
         serialNumber: order.serialNumber,
         expectedComponents: order.product.expectedComponents,
         notes: order.customerComments + ' ' + (order.scenarioType || ''),
+        // Original catalog image becomes the visual baseline for return-image matching.
+        expectedImageData,
       },
       returnId: order.returnId,
       scaleConfig,
@@ -76,7 +96,10 @@ export async function runAIInspection(
       })),
     };
 
-    const response = await fetch('/api/inspect', {
+    const apiBase = (import.meta as any).env?.VITE_API_URL || '';
+    const endpoint = apiBase ? `${apiBase.replace(/\/+$/, '')}/api/inspect` : '/api/inspect';
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -86,12 +109,12 @@ export async function runAIInspection(
       const data = await response.json();
       if (data && data.analysis) {
         rawAiResult = data.analysis;
-        rawAiResult.source = data.source || 'gemini-3.8-flash';
+        rawAiResult.source = data.source || 'gemini-2.5-flash';
         rawAiResult.processingTimeMs = data.processingTimeMs || (Date.now() - startTime);
       }
     }
   } catch (err) {
-    console.warn('Network call to /api/inspect failed; using internal evaluation engine.', err);
+    console.warn('Backend API unreachable; falling back to client evaluation engine.', err);
   }
 
   // Fallback if network or server call failed

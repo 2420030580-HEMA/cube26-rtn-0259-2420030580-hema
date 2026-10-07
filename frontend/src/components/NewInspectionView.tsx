@@ -180,17 +180,35 @@ export const NewInspectionView: React.FC<NewInspectionViewProps> = ({
   // Web Camera start
   const startCamera = async () => {
     try {
-      setIsCameraActive(true);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720, facingMode: 'environment' },
-      });
-      setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera API is not available in this browser.');
       }
+
+      // Request the stream before switching the UI into camera mode so a
+      // denied permission never leaves an empty black camera panel behind.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+
+      setCameraStream(stream);
+      setIsCameraActive(true);
+
+      requestAnimationFrame(async () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          try {
+            await videoRef.current.play();
+          } catch (playError) {
+            console.warn('Camera preview could not autoplay.', playError);
+          }
+        }
+      });
     } catch (err) {
-      console.warn('Web camera access unavailable; using fallback sample capture.', err);
+      setIsCameraActive(false);
+      setCameraStream(null);
+      console.warn('Web camera access unavailable.', err);
+      window.alert('Camera access is unavailable. Please ensure your browser has camera permission enabled and the site is opened on HTTPS or localhost.');
     }
   };
 

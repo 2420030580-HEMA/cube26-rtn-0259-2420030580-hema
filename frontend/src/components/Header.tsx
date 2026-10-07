@@ -20,7 +20,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
-    { id: 'home', label: 'Home' },
     { id: 'dashboard', label: 'How it works' },
     { id: 'analytics', label: 'Results' },
     { id: 'returns', label: 'Records' },
@@ -36,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="ri-header">
       <div className="ri-nav-inner">
-        <button className="ri-brand" onClick={() => select('home')} aria-label="RETURNIQ home">
+        <button className="ri-brand" onClick={() => select('dashboard')} aria-label="RETURNIQ home">
           <span className="ri-brand-mark">RQ</span>
           <span className="ri-brand-text">RETURN<span>IQ</span></span>
           <span className="ri-brand-sub">Return Intelligence</span>
