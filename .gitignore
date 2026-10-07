@@ -25,3 +25,6 @@ Thumbs.db
 # Backend storage images (keep folder via .gitkeep)
 backend/storage/inspection-images/*.jpg
 !backend/storage/inspection-images/.gitkeep
+
+# Local nested extraction folder
+RTN/
