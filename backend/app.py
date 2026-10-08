@@ -26,6 +26,16 @@ PORT = int(os.getenv("PORT", "3000"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+from database import (
+    get_inspection_details,
+    get_inspections,
+    get_latest_evaluation,
+    init_db,
+    save_evaluation_metrics,
+    save_inspection_record,
+)
+from returns_manager_agent import ReturnsManagerAgent
+
 try:
     from google import genai
     from google.genai import types
@@ -263,17 +273,81 @@ def inspect():
     if analysis is None:
         analysis = _fallback_analysis(order, images, visual)
 
+    # Execute full Returns Manager Agent condition check evaluation
+    agent_decision = ReturnsManagerAgent.evaluate_item(order, images, visual)
+    analysis["agentDecision"] = agent_decision
+    analysis["decisionFlow"] = agent_decision.get("decisionFlow")
+    analysis["finalOutcome"] = agent_decision.get("finalOutcome")
+    analysis["conditionChecks"] = agent_decision.get("conditionChecks")
+    analysis["isUncertain"] = agent_decision.get("isUncertain")
+    analysis["overallConfidence"] = agent_decision.get("overallConfidence")
+    analysis["modelVersion"] = agent_decision.get("modelVersion")
+
     analysis["processingTimeMs"] = round((time.time() - started) * 1000)
     analysis["storedImages"] = saved_images
+
+    # Persist structured record into SQLite & Supabase
+    db_record = {
+        "id": inspection_id,
+        "returnId": order.get("returnId", inspection_id),
+        "orderId": order.get("orderId", ""),
+        "productName": order.get("productName", ""),
+        "sku": order.get("sku", ""),
+        "serialNumber": order.get("serialNumber", ""),
+        "finalOutcome": agent_decision.get("finalOutcome"),
+        "conditionGrade": agent_decision.get("conditionGrade"),
+        "overallConfidence": agent_decision.get("overallConfidence"),
+        "isUncertain": agent_decision.get("isUncertain"),
+        "reason": agent_decision.get("reason"),
+        "modelVersion": agent_decision.get("modelVersion"),
+        "processingTimeMs": analysis["processingTimeMs"],
+        "conditionChecks": agent_decision.get("conditionChecks", []),
+        "operator": "ReturnsManagerAgent",
+        "storedImages": saved_images,
+        "decisionFlow": agent_decision.get("decisionFlow")
+    }
+    save_inspection_record(db_record)
 
     return jsonify({
         "status": "ok",
         "inspectionId": inspection_id,
         "analysis": analysis,
+        "decisionFlow": agent_decision.get("decisionFlow"),
+        "finalOutcome": agent_decision.get("finalOutcome"),
+        "conditionChecks": agent_decision.get("conditionChecks"),
+        "isUncertain": agent_decision.get("isUncertain"),
+        "overallConfidence": agent_decision.get("overallConfidence"),
         "source": analysis.get("source", "returniq-flask"),
         "processingTimeMs": analysis["processingTimeMs"],
         "storedImages": saved_images
     })
+
+
+@app.get("/api/inspections/records")
+def list_records():
+    records = get_inspections(limit=100)
+    return jsonify({"status": "ok", "count": len(records), "records": records})
+
+
+@app.get("/api/inspections/records/<record_id>")
+def get_record(record_id):
+    rec = get_inspection_details(record_id)
+    if not rec:
+        return jsonify({"status": "error", "message": "Record not found"}), 404
+    return jsonify({"status": "ok", "record": rec})
+
+
+@app.get("/api/evaluations/latest")
+def get_eval():
+    latest = get_latest_evaluation()
+    return jsonify({"status": "ok", "evaluation": latest})
+
+
+@app.post("/api/evaluations/run")
+def trigger_eval():
+    from evaluate_agent import run_evaluation_suite
+    report = run_evaluation_suite()
+    return jsonify({"status": "ok", "report": report})
 
 
 @app.get("/api/images/<path:filename>")

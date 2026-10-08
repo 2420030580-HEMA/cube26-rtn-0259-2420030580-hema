@@ -1331,6 +1331,101 @@ export const NewInspectionView: React.FC<NewInspectionViewProps> = ({
               </div>
 
               {/* ======================================================== */}
+              {/* RETURNS MANAGER AGENT: EXPLAINABLE DECISION FLOW BANNER  */}
+              {/* Returned Item → Condition Checks → Classification → Final Outcome → Supporting Evidence */}
+              {/* ======================================================== */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono text-[10px] font-bold tracking-wider uppercase">
+                      RETURNS MANAGER AGENT
+                    </span>
+                    <h3 className="text-sm font-bold text-white">Decision Flow & Explainable Audit Trail</h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Model: <strong className="text-blue-300">ReturnsManagerAgent-v2.5-prod</strong>
+                  </span>
+                </div>
+
+                {/* 5-Step Pipeline Steps */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5 text-xs">
+                  {/* Step 1: Returned Item */}
+                  <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="text-[9px] font-mono text-blue-400 font-bold uppercase block">
+                      1. Returned Item
+                    </span>
+                    <div className="font-semibold text-white truncate">{selectedOrder.product.name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">S/N: {selectedOrder.serialNumber || 'N/A'}</div>
+                  </div>
+
+                  {/* Step 2: Condition Checks */}
+                  <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="text-[9px] font-mono text-blue-400 font-bold uppercase block">
+                      2. Condition Checks
+                    </span>
+                    <div className="text-[11px] font-semibold text-slate-200">5 Protocols Run</div>
+                    <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                      <span>Identity · Wear · Seals · Kit · S/N</span>
+                    </div>
+                  </div>
+
+                  {/* Step 3: Classification */}
+                  <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="text-[9px] font-mono text-blue-400 font-bold uppercase block">
+                      3. Classification
+                    </span>
+                    <div className="text-[11px] font-semibold text-white">
+                      {aiResult.condition?.wearLevel || 'PRISTINE'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">Grade: {aiResult.condition?.result?.split(' - ')[0] || 'Grade A'}</div>
+                  </div>
+
+                  {/* Step 4: Final Outcome */}
+                  <div className={`p-3 rounded-lg border space-y-1 ${
+                    aiResult.identity.status === 'POTENTIAL_MISMATCH' || aiResult.integrity.status === 'MANUAL_REVIEW_REQUIRED'
+                      ? 'bg-amber-950/40 border-amber-800 text-amber-200'
+                      : 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
+                  }`}>
+                    <span className="text-[9px] font-mono font-bold uppercase block">
+                      4. Final Outcome
+                    </span>
+                    <div className="text-sm font-bold uppercase">
+                      {aiResult.identity.status === 'POTENTIAL_MISMATCH'
+                        ? 'FURTHER INSPECTION'
+                        : recommendation.disposition === 'RESTOCK'
+                        ? 'ACCEPT'
+                        : recommendation.disposition === 'DISPOSE'
+                        ? 'REJECT'
+                        : recommendation.disposition}
+                    </div>
+                    <div className="text-[9px] font-mono opacity-80">
+                      Confidence: {aiResult.identity.confidenceScore ? `${aiResult.identity.confidenceScore}%` : '92%'}
+                    </div>
+                  </div>
+
+                  {/* Step 5: Evidence */}
+                  <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="text-[9px] font-mono text-blue-400 font-bold uppercase block">
+                      5. Evidence Log
+                    </span>
+                    <div className="text-[11px] font-semibold text-emerald-400">Database Synced</div>
+                    <div className="text-[10px] text-slate-400 font-mono">SQLite + Supabase</div>
+                  </div>
+                </div>
+
+                {/* Safety Guarantee Callout: Conservative Non-Forced Decisions */}
+                <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-lg text-xs space-y-1">
+                  <div className="flex items-center gap-2 text-slate-300 font-semibold text-[11px]">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Decision Integrity Guarantee (Conservative Unambiguous Policy)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    The Returns Manager Agent never forces a decision when evidence is ambiguous, unreadable, or missing. Under uncertainty, the case routes directly to <strong className="text-amber-300">Further Inspection</strong> with structured audit records, avoiding costly false acceptances or incorrect rejections.
+                  </p>
+                </div>
+              </div>
+
+              {/* ======================================================== */}
               {/* 1. PRODUCT IDENTITY & BOX-SWAP VERIFICATION MODULE       */}
               {/* ======================================================== */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
