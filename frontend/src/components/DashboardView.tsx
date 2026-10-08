@@ -43,61 +43,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="ri-dashboard2">
       <section className="ri-d2-hero">
         <div className="ri-d2-hero-copy">
-          <div className="ri-d2-brandline">
-            <span>RETURNIQ</span>
-            <i />
-            <small>RETURN INTELLIGENCE</small>
+          <div className="ri-d2-kicker">
+            <Sparkles size={13} /> AI-powered return operations
           </div>
-          <div className="ri-d2-kicker"><Sparkles size={14} /> AI-POWERED RETURN OPERATIONS</div>
-          <h1>Smarter Returns.<br /><em>Safer Decisions.</em></h1>
+          <h1>
+            Smarter<br />
+            Returns.<br />
+            <em>Safer<br />
+            Decisions.</em>
+          </h1>
           <p>
-            AI-powered inspection, barcode traceability and visual evidence for faster,
-            more accurate return processing — built for the warehouse floor.
+            AI-powered inspection, barcode traceability and visual evidence
+            for faster, more accurate return processing — built for the
+            warehouse floor.
           </p>
           <div className="ri-d2-actions">
             <button className="ri-d2-primary" onClick={() => onStartInspection()}>
-              <ScanLine size={17} /> Start inspection <ArrowRight size={16} />
+              Start inspection
             </button>
             <button className="ri-d2-secondary" onClick={onOpenManualQueue}>
-              Review queue <ArrowUpRight size={16} />
+              Review queue
             </button>
-          </div>
-          <div className="ri-d2-trust-row">
-            <span><CheckCircle2 size={15} /> Visual AI</span>
-            <span><ScanBarcode size={15} /> Barcode ready</span>
-            <span><ShieldCheck size={15} /> Audit trail</span>
           </div>
         </div>
 
         <div className="ri-d2-hero-art">
           <div className="ri-d2-art-frame">
             <div className="ri-d2-art-top">
-              <span className="ri-d2-live"><i /> LIVE INSPECTION</span>
-              <span className="ri-d2-score"><strong>98%</strong><small>CONFIDENCE</small></span>
+              <span className="ri-d2-live"><i /> Live inspection</span>
+              <span className="ri-d2-score"><strong>98%</strong><small>Confidence</small></span>
             </div>
             <div className="ri-d2-image-wrap">
-              <img src={swapImage} alt="RETURNIQ product inspection" />
+              <div className="ri-mock-scene">
+                <div className="ri-mock-card-gold">
+                  <span>PHOENIX X1</span>
+                </div>
+                <div className="ri-mock-device">
+                  <div className="ri-mock-camera-lens" />
+                </div>
+              </div>
               <div className="ri-d2-scan-grid" />
-              <div className="ri-d2-tag tag-product"><b>01</b> PRODUCT MATCH</div>
-              <div className="ri-d2-tag tag-condition"><b>02</b> CONDITION</div>
-              <div className="ri-d2-focus"><span /><span /><span /><span /></div>
+              <div className="ri-d2-tag tag-product">Product match</div>
+              <div className="ri-d2-focus">
+                <div className="ri-d2-focus-dashed" />
+              </div>
+              <div className="ri-d2-tag tag-condition">Condition</div>
             </div>
-            <div className="ri-d2-art-footer">
-              <div><small>SELECTED RETURN</small><strong>PlayStation 5 Slim Disc Edition</strong></div>
-              <span className="ri-d2-ready"><CheckCircle2 size={14} /> READY</span>
+
+            <div className="ri-d2-hero-footer-bar">
+              <div className="ri-d2-barcode-inline">
+                <div>
+                  <small>Barcode scanned</small>
+                  <strong>SONY-PS5-1000X</strong>
+                </div>
+                <span className="ri-badge-valid">Valid</span>
+              </div>
+              <span className="ri-d2-ready-btn"><CheckCircle2 size={15} /> Ready</span>
             </div>
           </div>
+
           <div className="ri-d2-float-check">
-            <div className="ri-d2-float-title">AI INSPECTION <CheckCircle2 size={15} /></div>
+            <div className="ri-d2-float-title">AI inspection</div>
             <span>Product match <b>✓</b></span>
             <span>Condition <b>✓</b></span>
             <span>Accessories <b>✓</b></span>
             <span>Packaging <b>✓</b></span>
-          </div>
-          <div className="ri-d2-barcode-card">
-            <ScanBarcode size={24} />
-            <div><small>BARCODE SCANNED</small><strong>SONY-PS5-1000X</strong></div>
-            <span>VALID</span>
           </div>
         </div>
       </section>

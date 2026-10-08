@@ -35,9 +35,9 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="ri-header">
       <div className="ri-nav-inner">
-        <button className="ri-brand" onClick={() => select('dashboard')} aria-label="RETURNIQ home">
+        <button className="ri-brand" onClick={() => select('dashboard')} aria-label="ReturnIQ home">
           <span className="ri-brand-mark">RQ</span>
-          <span className="ri-brand-text">RETURN<span>IQ</span></span>
+          <span className="ri-brand-text">ReturnIQ</span>
           <span className="ri-brand-sub">Return Intelligence</span>
         </button>
 
@@ -56,17 +56,17 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="ri-nav-actions">
           {onOpenBarcodeScanner && (
             <button className="ri-icon-action" onClick={onOpenBarcodeScanner} title="Scan barcode">
-              <ScanBarcode size={17} /> <span>Scan</span>
+              <span>Scan</span>
             </button>
           )}
           {onOpenBoxSwapModal && (
-            <button className="ri-icon-action warning" onClick={onOpenBoxSwapModal} title="Box-swap solution">
-              <ShieldAlert size={17} /> <span>Box swap</span>
+            <button className="ri-icon-action" onClick={onOpenBoxSwapModal} title="Box-swap solution">
+              <span>Box swap</span>
             </button>
           )}
           <div className="ri-notify-wrap">
             <button className="ri-notify" onClick={() => setShowNotifications((v) => !v)} title="Notifications">
-              <Bell size={17} />
+              <Bell size={16} />
               {pendingReviewsCount > 0 && <i />}
             </button>
             {showNotifications && (
